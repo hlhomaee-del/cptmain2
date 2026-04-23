@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedCode Mastery — CBCS Simulation Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#fafbff;--card:#fff;--text:#1a1a2e;--muted:#6b7280;
+--accent:#6c5ce7;--accent2:#00cec9;--accent3:#fd79a8;--accent4:#fdcb6e;--accent5:#00b894;
+--correct:#00b894;--wrong:#e17055;--hint:#0984e3;
+--shadow:0 4px 24px rgba(108,92,231,.12);
+--glass:rgba(255,255,255,.85);
+--radius:16px;--radius-sm:10px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+.container{max-width:960px;margin:0 auto;padding:20px}
+
+/* ─── TOP BAR ─── */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(250,251,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(108,92,231,.08);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar .logo{font-weight:900;font-size:1.2rem;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar .logo span{font-size:.7rem;display:block;-webkit-text-fill-color:var(--muted);font-weight:500;letter-spacing:1px;text-transform:uppercase}
+.progress-wrap{flex:1;max-width:320px}
+.progress-bar{height:8px;background:#e8e6f0;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent5));border-radius:99px;transition:width .6s cubic-bezier(.22,1,.36,1)}
+.progress-label{font-size:.7rem;color:var(--muted);margin-top:2px;text-align:right}
+.sound-toggle{background:none;border:2px solid var(--accent);color:var(--accent);border-radius:99px;padding:6px 14px;cursor:pointer;font-family:inherit;font-weight:600;font-size:.78rem;transition:.2s}
+.sound-toggle:hover{background:var(--accent);color:#fff}
+.score-badge{background:linear-gradient(135deg,var(--accent5),var(--accent2));color:#fff;padding:6px 16px;border-radius:99px;font-weight:700;font-size:.85rem;white-space:nowrap}
+
+/* ─── SECTIONS ─── */
+.section{display:none;animation:fadeUp .5s ease}
+.section.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── NAV BUTTONS ─── */
+.nav-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:24px 0}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:12px 28px;border:none;border-radius:99px;font-family:inherit;font-weight:700;font-size:.92rem;cursor:pointer;transition:all .25s cubic-bezier(.22,1,.36,1);position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.35),transparent);pointer-events:none}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;box-shadow:0 4px 18px rgba(108,92,231,.3)}
+.btn-primary:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 8px 28px rgba(108,92,231,.4)}
+.btn-secondary{background:#fff;color:var(--accent);border:2px solid var(--accent);box-shadow:var(--shadow)}
+.btn-secondary:hover{background:var(--accent);color:#fff}
+.btn-accent{background:linear-gradient(135deg,var(--accent2),var(--accent5));color:#fff;box-shadow:0 4px 18px rgba(0,206,201,.3)}
+.btn-accent:hover{transform:translateY(-2px)}
+.btn-small{padding:8px 18px;font-size:.82rem}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+
+/* ─── HERO ─── */
+.hero{text-align:center;padding:60px 20px 40px}
+.hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:900;line-height:1.15;margin-bottom:12px}
+.hero h1 .grad{background:linear-gradient(135deg,var(--accent),var(--accent3),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--muted);font-size:1.1rem;max-width:560px;margin:0 auto 28px}
+
+/* ─── CARDS ─── */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;margin-bottom:20px;border:1px solid rgba(108,92,231,.06);position:relative;overflow:hidden}
+.card-glow{position:absolute;width:200px;height:200px;border-radius:50%;filter:blur(80px);opacity:.12;pointer-events:none}
+.card h2{font-size:1.4rem;font-weight:800;margin-bottom:8px}
+.card h3{font-size:1.15rem;font-weight:700;margin-bottom:6px}
+.callout{background:linear-gradient(135deg,rgba(108,92,231,.07),rgba(0,206,201,.05));border-left:4px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:16px 20px;margin:16px 0;font-size:.95rem}
+.callout.tip{border-left-color:var(--accent2)}
+.callout.warn{border-left-color:var(--accent4);background:linear-gradient(135deg,rgba(253,203,110,.08),rgba(253,121,168,.04))}
+.tag{display:inline-block;padding:3px 12px;border-radius:99px;font-size:.75rem;font-weight:700;margin:2px}
+.tag-purple{background:rgba(108,92,231,.12);color:var(--accent)}
+.tag-teal{background:rgba(0,206,201,.12);color:#00a8a3}
+.tag-pink{background:rgba(253,121,168,.12);color:#e84393}
+.tag-green{background:rgba(0,184,148,.12);color:#00a86b}
+
+/* ─── FLIP CARDS ─── */
+.flip-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:20px 0;align-items:stretch}
+.flip-card{perspective:900px;height:320px;cursor:pointer;min-width:0;width:100%}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.22,1,.36,1);transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;inset:0;border-radius:var(--radius);backface-visibility:hidden;display:flex;flex-direction:column;padding:20px;text-align:center}
+.flip-front{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;font-weight:800;font-size:1.6rem;box-shadow:0 6px 24px rgba(108,92,231,.25);align-items:center;justify-content:center}
+.flip-front small{font-weight:400;font-size:.85rem;margin-top:6px;opacity:.85}
+.flip-back{background:var(--card);border:2px solid var(--accent);transform:rotateY(180deg);font-size:.88rem;overflow-y:auto;line-height:1.5;justify-content:flex-start;align-items:stretch;padding-right:14px}
+.flip-back strong{color:var(--accent);display:block;margin-bottom:6px;font-size:1rem}
+.flip-back::-webkit-scrollbar{width:8px}
+.flip-back::-webkit-scrollbar-thumb{background:rgba(108,92,231,.28);border-radius:99px}
+.flip-back::-webkit-scrollbar-track{background:rgba(108,92,231,.06);border-radius:99px}
+
+/* ─── QUIZ ─── */
+.quiz-block{margin:20px 0}
+.quiz-q{font-weight:700;font-size:1.05rem;margin-bottom:14px;line-height:1.45}
+.quiz-options{display:flex;flex-direction:column;gap:10px}
+.quiz-opt{padding:14px 20px;border:2px solid #e2e0ee;border-radius:var(--radius-sm);cursor:pointer;font-size:.95rem;transition:.2s;background:#fff;text-align:left;font-family:inherit;line-height:1.45;width:100%}
+.quiz-opt:hover:not(.locked){border-color:var(--accent);background:rgba(108,92,231,.04)}
+.quiz-opt.selected{border-color:var(--accent);background:rgba(108,92,231,.08)}
+.quiz-opt.correct-show{border-color:var(--correct)!important;background:rgba(0,184,148,.1)!important;color:#065f46}
+.quiz-opt.wrong-show{border-color:var(--wrong)!important;background:rgba(225,112,85,.1)!important;color:#922b21;text-decoration:line-through}
+.quiz-opt.locked{cursor:default}
+.quiz-feedback{margin-top:14px;padding:14px 18px;border-radius:var(--radius-sm);font-size:.92rem;line-height:1.5;display:none}
+.quiz-feedback.show{display:block;animation:fadeUp .3s ease}
+.quiz-feedback.correct-fb{background:rgba(0,184,148,.08);border:1px solid var(--correct);color:#065f46}
+.quiz-feedback.wrong-fb{background:rgba(225,112,85,.08);border:1px solid var(--wrong);color:#922b21}
+.quiz-feedback.hint-fb{background:rgba(9,132,227,.07);border:1px solid var(--hint);color:#1a4a7a}
+.attempts-left{font-size:.8rem;color:var(--muted);margin-top:6px}
+
+/* ─── DRAG & DROP ─── */
+.drag-area{display:flex;align-items:center;justify-content:center;min-height:44px;width:130px;padding:8px;border:2px dashed #d1d0e0;border-radius:12px;transition:.2s;background:rgba(108,92,231,.02);flex-shrink:0}
+.drag-area.over{border-color:var(--accent);background:rgba(108,92,231,.06)}
+.drag-item{padding:10px 18px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border:none;border-radius:var(--radius-sm);cursor:grab;font-size:.9rem;font-weight:700;color:#fff;transition:.2s;user-select:none;box-shadow:0 3px 10px rgba(108,92,231,.25)}
+.drag-item:active{cursor:grabbing;transform:scale(1.05)}
+.drag-item.placed{opacity:.5;pointer-events:none}
+.match-row{display:grid;grid-template-columns:140px 1fr;gap:14px;align-items:center;margin-bottom:12px;background:#fff;border-radius:12px;padding:12px 14px;border:1.5px solid #e2e0ee;box-shadow:0 2px 8px rgba(108,92,231,.07)}
+@media(max-width:700px){.match-row{grid-template-columns:1fr;gap:8px}.drag-area{width:100%}}
+.bucket-label{font-weight:700;font-size:.95rem;color:var(--accent);margin:0}
+
+/* ─── MDM TABLE ─── */
+.mdm-table{width:100%;border-collapse:separate;border-spacing:0;margin:16px 0;font-size:.85rem}
+.mdm-table th{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:#fff;padding:12px 14px;text-align:left;font-weight:700}
+.mdm-table th:first-child{border-radius:var(--radius-sm) 0 0 0}
+.mdm-table th:last-child{border-radius:0 var(--radius-sm) 0 0}
+.mdm-table td{padding:11px 14px;border-bottom:1px solid #eee;vertical-align:top}
+.mdm-table tr:nth-child(even) td{background:#faf9ff}
+.mdm-table tr:last-child td:first-child{border-radius:0 0 0 var(--radius-sm)}
+.mdm-table tr:last-child td:last-child{border-radius:0 0 var(--radius-sm) 0}
+.mdm-table .level-badge{display:inline-block;padding:2px 10px;border-radius:99px;font-weight:700;font-size:.78rem}
+.lvl-sf{background:#e0f7fa;color:#00838f}
+.lvl-low{background:#e8f5e9;color:#2e7d32}
+.lvl-mod{background:#fff3e0;color:#e65100}
+.lvl-high{background:#fce4ec;color:#c62828}
+
+/* ─── MDM CALCULATOR ─── */
+.calc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:700px){.calc-grid{grid-template-columns:1fr}}
+.calc-col{background:#f8f7ff;border-radius:var(--radius-sm);padding:16px;border:2px solid #e2e0ee}
+.calc-col h4{font-size:.88rem;margin-bottom:10px;color:var(--accent)}
+.calc-radio{display:flex;flex-direction:column;gap:8px}
+.calc-radio label{display:flex;align-items:flex-start;gap:8px;font-size:.84rem;cursor:pointer;padding:8px;border-radius:8px;transition:.15s;border:1px solid transparent}
+.calc-radio label:hover{background:rgba(108,92,231,.05);border-color:rgba(108,92,231,.15)}
+.calc-radio input{margin-top:3px;accent-color:var(--accent)}
+.calc-result{text-align:center;padding:20px;background:linear-gradient(135deg,rgba(108,92,231,.06),rgba(0,206,201,.04));border-radius:var(--radius-sm);margin-top:12px;border:2px solid #e2e0ee;transition:.3s}
+.calc-result .level-output{font-size:1.8rem;font-weight:900;color:var(--accent);min-height:44px}
+
+/* ─── SUMMARY ─── */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin:20px 0}
+.stat-card{background:#f8f7ff;border-radius:var(--radius-sm);padding:20px;text-align:center;border:1px solid #e8e6f0}
+.stat-card .stat-num{font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-card .stat-label{font-size:.8rem;color:var(--muted);margin-top:2px}
+textarea.reflect{width:100%;min-height:100px;border:2px solid #e2e0ee;border-radius:var(--radius-sm);padding:14px;font-family:inherit;font-size:.95rem;resize:vertical;transition:.2s}
+textarea.reflect:focus{outline:none;border-color:var(--accent)}
+.generated-summary{background:#f8f7ff;border-radius:var(--radius-sm);padding:20px;margin:16px 0;border:2px solid #e8e6f0;white-space:pre-wrap;font-size:.9rem;line-height:1.6}
+
+/* ─── CONFETTI ─── */
+.confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999}
+
+/* ─── SECTION BADGE ─── */
+.section-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:99px;font-size:.78rem;font-weight:700;margin-bottom:16px}
+.badge-cpt{background:linear-gradient(135deg,rgba(108,92,231,.12),rgba(139,92,246,.12));color:var(--accent)}
+.badge-em{background:linear-gradient(135deg,rgba(0,206,201,.12),rgba(0,184,148,.12));color:#00a8a3}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:1024px){.flip-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.flip-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.container{padding:12px}.card{padding:20px}.hero h1{font-size:1.8rem}.topbar{padding:8px 12px;gap:8px}.score-badge{font-size:.75rem;padding:5px 10px}.flip-grid{grid-template-columns:1fr}.flip-card{height:300px}}
+
+/* ─── MISC ─── */
+.hidden{display:none!important}
+.mt-2{margin-top:16px}
+.mb-2{margin-bottom:16px}
+.text-center{text-align:center}
+.bold{font-weight:700}
+.kw{color:var(--accent);font-weight:700}
+.kw2{color:#00a8a3;font-weight:700}
+.kw3{color:#e84393;font-weight:700}
+hr.divider{border:none;height:2px;background:linear-gradient(90deg,transparent,#e2e0ee,transparent);margin:28px 0}
+.checklist{list-style:none;padding:0}
+.checklist li{padding:6px 0 6px 28px;position:relative;font-size:.95rem}
+.checklist li::before{content:'✓';position:absolute;left:0;color:var(--accent5);font-weight:700}
+.section-header{font-size:1.6rem;font-weight:900;margin-bottom:8px;line-height:1.2}
+.section-sub{color:var(--muted);font-size:.95rem;margin-bottom:20px}
+</style>
+</head>
+<body>
+
+<!-- ═══════ TOP BAR ═══════ -->
+<div class="topbar">
+  <div class="logo">MedCode Mastery<span>CBCS Simulation Lab</span></div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-label" id="progressLabel">0% complete</div>
+  </div>
+  <div class="score-badge" id="scoreBadge">★ 0 pts</div>
+  <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊 On</button>
+</div>
+
+<!-- ═══════ CONFETTI CANVAS ═══════ -->
+<canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--                    SECTION 0: HOME                           -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section active" id="sec-home">
+<div class="container">
+<div class="hero">
+  <h1>Welcome to <span class="grad">MedCode Mastery</span></h1>
+  <p>Your interactive simulation lab for <strong>CPT modifiers</strong> and <strong>E/M visit complexity</strong>. Think, click, sort, and master — no boring reading walls here.</p>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:640px;margin:0 auto">
+  <div class="card" style="cursor:pointer" onclick="goTo('sec-cpt-intro')">
+    <div class="card-glow" style="background:var(--accent);top:-40px;right:-40px"></div>
+    <span class="tag tag-purple">Part 1</span>
+    <h2 style="margin-top:8px">CPT Modifiers</h2>
+    <p style="font-size:.9rem;color:var(--muted);margin:6px 0 12px">Learn what modifiers are, why they matter, and master the 12 most tested ones through games and challenges.</p>
+    <span class="btn btn-primary btn-small">Start →</span>
+  </div>
+  <div class="card" style="cursor:pointer" onclick="goTo('sec-em-intro')">
+    <div class="card-glow" style="background:var(--accent2);top:-40px;right:-40px"></div>
+    <span class="tag tag-teal">Part 2</span>
+    <h2 style="margin-top:8px">E/M Complexity</h2>
+    <p style="font-size:.9rem;color:var(--muted);margin:6px 0 12px">Master Medical Decision Making. Learn to determine visit level from case clues using a practical framework.</p>
+    <span class="btn btn-accent btn-small">Start →</span>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--                  SECTION 1: CPT INTRO                        -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-cpt-intro">
+<div class="container">
+<span class="section-badge badge-cpt">📘 Part 1 — CPT Modifiers</span>
+<h1 class="section-header">What Is CPT & Why Modifiers Matter</h1>
+<p class="section-sub">Before we touch modifiers, let's lock in the foundation.</p>
+
+<div class="card">
+<h3>🧬 CPT Codes in 60 Seconds</h3>
+<p><span class="kw">CPT</span> stands for <strong>Current Procedural Terminology</strong>. It's a standardized system of <strong>5-digit codes</strong> maintained by the AMA that describes <em>every</em> medical service or procedure a provider can perform.</p>
+<div class="callout">
+<strong>Example:</strong> Code <span class="kw">99213</span> = an established patient office visit with low complexity. Code <span class="kw">29881</span> = arthroscopy of the knee with meniscectomy.
+</div>
+<p>CPT codes are organized into three categories:</p>
+<ul class="checklist">
+  <li><strong>Category I</strong> — widely performed procedures and services (the ones you'll use most)</li>
+  <li><strong>Category II</strong> — tracking/performance measurement codes</li>
+  <li><strong>Category III</strong> — emerging technology/temporary codes</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>🏷️ So What Are Modifiers?</h3>
+<p>A <span class="kw">modifier</span> is a <strong>2-digit add-on</strong> (sometimes 2 characters) appended to a CPT code. It tells the payer <em>something special</em> happened — without changing the base procedure.</p>
+<div class="callout tip">
+Think of it this way: the CPT code says <strong>what</strong> was done. The modifier says <strong>how, where, why, or under what circumstances</strong> it was different from the standard scenario.
+</div>
+<p>Modifiers matter because:</p>
+<ul class="checklist">
+  <li>They affect <strong>reimbursement</strong> — wrong modifier = denied claim</li>
+  <li>They prevent <strong>bundling errors</strong> — telling the payer two things were truly separate</li>
+  <li>They add <strong>clinical context</strong> — bilateral, repeat, reduced, distinct, etc.</li>
+  <li>They're <strong>heavily tested</strong> on CBCS and NHA exams</li>
+</ul>
+</div>
+
+<!-- Quick check -->
+<div class="card">
+<h3>⚡ Quick Concept Check</h3>
+<div class="quiz-block" id="q-cpt1"></div>
+</div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-home')">🏠 Home</button>
+  <button class="btn btn-primary" onclick="goTo('sec-cpt-flipcards')">Next: Learn the Modifiers →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 2: CPT FLIP CARDS                       -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-cpt-flipcards">
+<div class="container">
+<span class="section-badge badge-cpt">📘 Part 1 — Modifier Deep Dive</span>
+<h1 class="section-header">Meet the 12 Must-Know Modifiers</h1>
+<p class="section-sub">Click each card to flip it. Study the front (modifier number + name) and back (details). Try to recall the back before flipping!</p>
+
+<div class="flip-grid" id="flipGrid"></div>
+
+<div class="callout warn" style="margin-top:20px">
+<strong>⚠️ Exam trap:</strong> Modifiers <span class="kw">-59</span> vs <span class="kw">-XE/XS/XP/XU</span>, and <span class="kw">-25</span> vs <span class="kw">-57</span> are the most confused. Pay extra attention to those cards.
+</div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-cpt-intro')">← Back</button>
+  <button class="btn btn-primary" onclick="goTo('sec-cpt-match')">Next: Matching Game →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 3: CPT DRAG MATCH                       -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-cpt-match">
+<div class="container">
+<span class="section-badge badge-cpt">📘 Part 1 — Matching Challenge</span>
+<h1 class="section-header">Drag Each Modifier to Its Meaning</h1>
+<p class="section-sub">Drag the modifier chip into the correct definition box. Get them all right to advance.</p>
+
+<div id="dragMatchArea"></div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-cpt-flipcards')">← Back</button>
+  <button class="btn btn-primary" onclick="goTo('sec-cpt-quiz')">Next: Quiz Challenge →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 4: CPT QUIZ                             -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-cpt-quiz">
+<div class="container">
+<span class="section-badge badge-cpt">📘 Part 1 — Tricky Quiz Challenge</span>
+<h1 class="section-header">Modifier Mastery Quiz</h1>
+<p class="section-sub">These questions use CBCS-style wording. Read carefully — the devil is in the details. You get 3 attempts per question with progressive hints.</p>
+
+<div id="cptQuizArea"></div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-cpt-match')">← Back</button>
+  <button class="btn btn-primary" onclick="goTo('sec-cpt-sim')">Next: Simulation Round →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 5: CPT SIM                              -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-cpt-sim">
+<div class="container">
+<span class="section-badge badge-cpt">📘 Part 1 — Boss Round 🔥</span>
+<h1 class="section-header">Case-Based Simulation</h1>
+<p class="section-sub">You're the billing specialist. Read each clinical scenario and select the correct modifier. These are tough — physician-level wording ahead.</p>
+
+<div id="cptSimArea"></div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-cpt-quiz')">← Back</button>
+  <button class="btn btn-primary" onclick="completeCPT()">Complete Part 1 & Continue →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 6: E/M INTRO                            -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-em-intro">
+<div class="container">
+<span class="section-badge badge-em">🩺 Part 2 — E/M Complexity</span>
+<h1 class="section-header">Understanding Visit Complexity & MDM</h1>
+<p class="section-sub">How do you know if a visit is straightforward, low, moderate, or high? Let's build a system you can actually use.</p>
+
+<div class="card">
+<h3>🧠 What Is Medical Decision Making (MDM)?</h3>
+<p><span class="kw2">MDM</span> is the framework used to determine the <strong>complexity level</strong> of an Evaluation & Management (E/M) visit. Since 2021 guidelines, MDM is the primary driver for selecting the correct E/M code level.</p>
+<p>MDM has <strong>3 elements</strong>. You need to meet <strong>2 of 3</strong> to qualify for a level:</p>
+</div>
+
+<div class="card" style="overflow-x:auto">
+<h3>📊 The MDM Framework</h3>
+<table class="mdm-table">
+<thead>
+<tr><th>Level</th><th>Problems</th><th>Data Reviewed</th><th>Risk of Complications</th></tr>
+</thead>
+<tbody>
+<tr><td><span class="level-badge lvl-sf">Straightforward</span></td><td>1 self-limited / minor problem</td><td>Minimal or none</td><td>Minimal risk</td></tr>
+<tr><td><span class="level-badge lvl-low">Low</span></td><td>2+ self-limited problems <em>OR</em> 1 stable chronic illness</td><td>Limited data (order/review of tests)</td><td>Low risk (OTC drugs, minor surgery)</td></tr>
+<tr><td><span class="level-badge lvl-mod">Moderate</span></td><td>1+ chronic illness with mild exacerbation <em>OR</em> 1 undiagnosed new problem with uncertain prognosis</td><td>Moderate data (order/review + independent interpretation OR discussion with external provider)</td><td>Moderate risk (Rx drug management, minor surgery + risk factors)</td></tr>
+<tr><td><span class="level-badge lvl-high">High</span></td><td>1+ chronic illness with severe exacerbation <em>OR</em> 1 acute/chronic illness posing threat to life or bodily function</td><td>Extensive data (independent interpretation of tests + discussion with external physician)</td><td>High risk (hospitalization, drug therapy requiring intensive monitoring, decisions about surgery with major risk factors)</td></tr>
+</tbody>
+</table>
+<div class="callout tip">
+<strong>Key rule:</strong> You need <strong>2 of 3 elements</strong> to meet a level. Always check: <em>What problems are addressed? What data was used? What risk is involved?</em>
+</div>
+</div>
+
+<div class="card">
+<h3>⚡ Quick Concept Check</h3>
+<div class="quiz-block" id="q-em1"></div>
+</div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-home')">🏠 Home</button>
+  <button class="btn btn-primary" onclick="goTo('sec-em-calc')">Next: MDM Calculator →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 7: E/M CALCULATOR                       -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-em-calc">
+<div class="container">
+<span class="section-badge badge-em">🩺 Part 2 — MDM Calculator Tool</span>
+<h1 class="section-header">Your MDM Level Finder</h1>
+<p class="section-sub">Use this interactive tool to determine MDM level. Select one option per column — the tool shows the resulting complexity level. Use it while practicing cases!</p>
+
+<div class="card">
+<div class="calc-grid">
+  <div class="calc-col">
+    <h4>Element 1: Problems</h4>
+    <div class="calc-radio">
+      <label><input type="radio" name="mdm-prob" value="0" onchange="calcMDM()"> 1 self-limited/minor problem</label>
+      <label><input type="radio" name="mdm-prob" value="1" onchange="calcMDM()"> 2+ self-limited <em>or</em> 1 stable chronic</label>
+      <label><input type="radio" name="mdm-prob" value="2" onchange="calcMDM()"> Chronic w/ exacerbation <em>or</em> new undiagnosed problem</label>
+      <label><input type="radio" name="mdm-prob" value="3" onchange="calcMDM()"> Severe exacerbation <em>or</em> threat to life/function</label>
+    </div>
+  </div>
+  <div class="calc-col">
+    <h4>Element 2: Data</h4>
+    <div class="calc-radio">
+      <label><input type="radio" name="mdm-data" value="0" onchange="calcMDM()"> Minimal or none</label>
+      <label><input type="radio" name="mdm-data" value="1" onchange="calcMDM()"> Limited (order/review tests)</label>
+      <label><input type="radio" name="mdm-data" value="2" onchange="calcMDM()"> Moderate (independent interp. or external discussion)</label>
+      <label><input type="radio" name="mdm-data" value="3" onchange="calcMDM()"> Extensive (indep. interp. + external physician discussion)</label>
+    </div>
+  </div>
+  <div class="calc-col">
+    <h4>Element 3: Risk</h4>
+    <div class="calc-radio">
+      <label><input type="radio" name="mdm-risk" value="0" onchange="calcMDM()"> Minimal risk</label>
+      <label><input type="radio" name="mdm-risk" value="1" onchange="calcMDM()"> Low (OTC drugs, minor surgery w/o risk factors)</label>
+      <label><input type="radio" name="mdm-risk" value="2" onchange="calcMDM()"> Moderate (Rx management, minor surgery w/ risk factors)</label>
+      <label><input type="radio" name="mdm-risk" value="3" onchange="calcMDM()"> High (hospitalization, intensive monitoring, major surgery)</label>
+    </div>
+  </div>
+</div>
+<div class="calc-result">
+  <div style="font-size:.85rem;color:var(--muted);margin-bottom:4px">MDM Level Result (2 of 3 rule)</div>
+  <div class="level-output" id="mdmResult">Select options above</div>
+</div>
+</div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-em-intro')">← Back</button>
+  <button class="btn btn-primary" onclick="goTo('sec-em-cases')">Next: Case Practice →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 8: E/M CASES                            -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-em-cases">
+<div class="container">
+<span class="section-badge badge-em">🩺 Part 2 — Case-Based Practice</span>
+<h1 class="section-header">Determine the Visit Level</h1>
+<p class="section-sub">Read each clinical scenario, analyze the clues, and select the MDM level. Progressive hints available. Some cases are intentionally tricky!</p>
+
+<div id="emCaseArea"></div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-em-calc')">← Back</button>
+  <button class="btn btn-primary" onclick="goTo('sec-em-sim')">Next: Simulation Boss Round →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 9: E/M SIM                              -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-em-sim">
+<div class="container">
+<span class="section-badge badge-em">🩺 Part 2 — Boss Round 🔥</span>
+<h1 class="section-header">E/M Complexity Simulation</h1>
+<p class="section-sub">Complex, multi-element cases with tricky wording. Prove you can handle real-world documentation analysis.</p>
+
+<div id="emSimArea"></div>
+
+<div class="nav-row">
+  <button class="btn btn-secondary" onclick="goTo('sec-em-cases')">← Back</button>
+  <button class="btn btn-primary" onclick="completeEM()">Complete Part 2 & View Summary →</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--              SECTION 10: SUMMARY                             -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-summary">
+<div class="container">
+<span class="section-badge" style="background:linear-gradient(135deg,rgba(253,121,168,.12),rgba(253,203,110,.12));color:#e84393">🎉 Lab Complete</span>
+<h1 class="section-header">Your Performance Summary</h1>
+<p class="section-sub">Here's how you did. Review your results and reflect below.</p>
+
+<div class="summary-grid" id="summaryStats"></div>
+
+<div class="card">
+<h3>📋 Detailed Breakdown</h3>
+<div id="summaryBreakdown"></div>
+</div>
+
+<div class="card">
+<h3>💭 Student Reflection</h3>
+<p style="font-size:.9rem;color:var(--muted);margin-bottom:10px">Take a moment to reflect. This will be included in your summary.</p>
+<label style="font-weight:600;font-size:.9rem;display:block;margin-bottom:4px">What am I still confused about?</label>
+<textarea class="reflect" id="reflectConfused" placeholder="e.g., I keep mixing up -25 and -57..."></textarea>
+<label style="font-weight:600;font-size:.9rem;display:block;margin:12px 0 4px">What do I want to work on next?</label>
+<textarea class="reflect" id="reflectNext" placeholder="e.g., More practice with moderate vs high MDM..."></textarea>
+<label style="font-weight:600;font-size:.9rem;display:block;margin:12px 0 4px">Confidence level right now? (1–10)</label>
+<textarea class="reflect" id="reflectConf" placeholder="e.g., 7 — feeling good about modifiers, less sure about E/M"></textarea>
+</div>
+
+<div class="nav-row">
+<button class="btn btn-primary" onclick="generateSummary()">📝 Generate My Summary</button>
+<button class="btn btn-accent" onclick="copySummary()">📋 Copy Summary</button>
+<button class="btn btn-secondary" onclick="resetReflection()">🔄 Reset Reflection</button>
+</div>
+
+<div class="generated-summary hidden" id="generatedSummary"></div>
+
+<div class="nav-row">
+<button class="btn btn-secondary" onclick="goTo('sec-home')">🏠 Back to Home</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--                        JAVASCRIPT                            -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<script>
+// ─── AUDIO ───
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+let soundOn = true;
+function ensureAudio(){if(!audioCtx) audioCtx = new AudioCtx();}
+function playTone(freq,dur,type='sine',vol=.13){
+  if(!soundOn) return;
+  ensureAudio();
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type=type;o.frequency.value=freq;g.gain.value=vol;
+  o.connect(g);g.connect(audioCtx.destination);
+  o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);
+  o.stop(audioCtx.currentTime+dur);
+}
+function sndCorrect(){playTone(523,.1);setTimeout(()=>playTone(659,.1),100);setTimeout(()=>playTone(784,.15),200);}
+function sndWrong(){playTone(200,.25,'sawtooth',.08);}
+function sndHint(){playTone(440,.12);setTimeout(()=>playTone(494,.12),120);}
+function sndComplete(){[0,100,200,300,400].forEach((d,i)=>setTimeout(()=>playTone(523+i*60,.15),d));}
+function sndCelebrate(){[0,80,160,240,320,400,500].forEach((d,i)=>setTimeout(()=>playTone(440+i*80,.12,'triangle',.1),d));}
+function sndSwish(){
+  if(!soundOn)return;ensureAudio();
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
+  o.type='sine';f.type='bandpass';f.frequency.value=800;f.Q.value=0.5;
+  o.frequency.setValueAtTime(1200,audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(400,audioCtx.currentTime+0.18);
+  g.gain.setValueAtTime(0.12,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.22);
+  o.connect(f);f.connect(g);g.connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+0.22);
+}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊 On':'🔇 Off';}
+
+// ─── STATE ───
+let totalScore=0;
+let hintsUsed=0;
+let sectionScores={cptIntro:0,cptMatch:0,cptQuiz:0,cptSim:0,emIntro:0,emCases:0,emSim:0};
+let sectionMaxes={cptIntro:1,cptMatch:6,cptQuiz:6,cptSim:4,emIntro:1,emCases:5,emSim:4};
+let sectionDone={cpt:false,em:false};
+const totalSections = 10;
+let visitedSections = new Set(['sec-home']);
+
+function addScore(section,pts){sectionScores[section]=(sectionScores[section]||0)+pts;totalScore+=pts;document.getElementById('scoreBadge').textContent='★ '+totalScore+' pts';}
+function updateProgress(){
+  const pct = Math.round(visitedSections.size / totalSections * 100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressLabel').textContent = pct+'% complete';
+}
+
+// ─── NAV ───
+function goTo(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if(el){el.classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+  visitedSections.add(id);
+  updateProgress();
+}
+
+// ─── CONFETTI ───
+function fireConfetti(){
+  const c=document.getElementById('confettiCanvas'),ctx=c.getContext('2d');
+  c.width=window.innerWidth;c.height=window.innerHeight;
+  const particles=[];const colors=['#6c5ce7','#00cec9','#fd79a8','#fdcb6e','#00b894','#e17055','#0984e3'];
+  for(let i=0;i<150;i++){
+    particles.push({x:Math.random()*c.width,y:Math.random()*c.height-c.height,vx:(Math.random()-.5)*8,vy:Math.random()*6+3,color:colors[Math.floor(Math.random()*colors.length)],size:Math.random()*8+3,rot:Math.random()*360,rv:(Math.random()-.5)*10});
+  }
+  let frames=0;
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    particles.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.rot+=p.rv;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color;ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size);
+      ctx.restore();
+    });
+    frames++;
+    if(frames<180) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,c.width,c.height);
+  }
+  draw();
+  sndCelebrate();
+}
+
+// ─── SHUFFLE ───
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor((crypto.getRandomValues(new Uint32Array(1))[0]/0xFFFFFFFF)*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+// ─── QUIZ BUILDER ───
+function buildQuiz(containerId, q, section){
+  const wrap = document.getElementById(containerId);
+  if(!wrap) return;
+  wrap.innerHTML='';
+  const div = document.createElement('div');
+  div.className='quiz-block';
+  div.innerHTML = `<div class="quiz-q">${q.question}</div><div class="quiz-options" id="${containerId}-opts"></div><div class="quiz-feedback" id="${containerId}-fb"></div><div class="attempts-left" id="${containerId}-att">Attempts remaining: 3</div>`;
+  wrap.appendChild(div);
+  const optsDiv = document.getElementById(containerId+'-opts');
+  const shuffled = shuffle(q.options.map((o,i)=>({...o,origIdx:i})));
+  let attempts=0;
+  const maxAtt=3;
+
+  shuffled.forEach((opt,si)=>{
+    const btn = document.createElement('button');
+    btn.className='quiz-opt';
+    btn.textContent=opt.text;
+    btn._isCorrect = opt.correct;
+    btn.onclick=()=>{
+      if(btn.classList.contains('locked')) return;
+      attempts++;
+      const fb = document.getElementById(containerId+'-fb');
+      const att = document.getElementById(containerId+'-att');
+      if(opt.correct){
+        btn.classList.add('correct-show','locked');
+        optsDiv.querySelectorAll('.quiz-opt').forEach(b=>b.classList.add('locked'));
+        fb.className='quiz-feedback show correct-fb';
+        fb.innerHTML='<strong>✓ Correct!</strong> '+q.rationale;
+        att.textContent='';
+        sndCorrect();
+        addScore(section,1);
+      } else {
+        btn.classList.add('wrong-show','locked');
+        const remaining = maxAtt-attempts;
+        if(remaining>0){
+          fb.className='quiz-feedback show hint-fb';
+          fb.innerHTML='<strong>💡 Hint '+(attempts)+'/'+maxAtt+':</strong> '+q.hints[Math.min(attempts-1,q.hints.length-1)];
+          att.textContent='Attempts remaining: '+remaining;
+          sndHint();
+          hintsUsed++;
+        } else {
+          optsDiv.querySelectorAll('.quiz-opt').forEach(b=>{
+            b.classList.add('locked');
+            if(b._isCorrect) b.classList.add('correct-show');
+          });
+          fb.className='quiz-feedback show wrong-fb';
+          fb.innerHTML='<strong>✗ Answer revealed:</strong> '+q.rationale;
+          att.textContent='';
+          sndWrong();
+        }
+      }
+    };
+    optsDiv.appendChild(btn);
+  });
+}
+
+function buildMultiQuiz(containerId, questions, section){
+  const wrap = document.getElementById(containerId);
+  if(!wrap) return;
+  wrap.innerHTML='';
+  questions.forEach((q,qi)=>{
+    const qId = containerId+'-q'+qi;
+    const d = document.createElement('div');
+    d.innerHTML=`<div class="card"><h3>Question ${qi+1} of ${questions.length}</h3><div id="${qId}"></div></div>`;
+    wrap.appendChild(d);
+    buildQuiz(qId, q, section);
+  });
+}
+
+// ═════════════════════════════════════════════════════════
+//                MODIFIER DATA
+// ═════════════════════════════════════════════════════════
+const modifiers = [
+  {num:'-25', name:'Significant, Separately Identifiable E/M Service',
+   desc:'Used when a provider performs an E/M service on the same day as a procedure and the E/M is above and beyond the procedure itself.',
+   clue:'Look for documentation of a separate clinical issue or significant additional workup that\'s distinct from the procedure performed that day.',
+   trap:'Don\'t confuse with -57 (decision for surgery). -25 is for a separate E/M on the same day as a minor procedure; -57 is the decision for major surgery.',
+   example:'Patient comes for a scheduled wart removal (minor procedure). During the visit, the physician also evaluates a new suspicious mole requiring biopsy planning — a separate E/M with -25 is supported.'},
+  {num:'-26', name:'Professional Component',
+   desc:'Reports only the physician\'s interpretation/reading portion of a service that has both a professional and technical component.',
+   clue:'The provider reads/interprets but does NOT own the equipment or employ the technician. Common with radiology, pathology.',
+   trap:'-TC (technical component) is the opposite — reports the facility/equipment side. If one entity does both, no modifier is needed (global service).',
+   example:'A radiologist at a hospital reads a chest X-ray taken by hospital staff using hospital equipment. The radiologist bills the CPT code with -26 for the professional read only.'},
+  {num:'-50', name:'Bilateral Procedure',
+   desc:'Indicates the same procedure was performed on both sides of the body during the same operative session.',
+   clue:'Words like "bilateral," "both sides," "right and left" in the operative note. The procedure must be inherently unilateral for -50 to apply.',
+   trap:'Some CPT codes are already described as bilateral — adding -50 would be incorrect. Always check the code description first.',
+   example:'Surgeon performs inguinal hernia repair on both the right and left sides. The unilateral hernia repair code is billed once with modifier -50.'},
+  {num:'-51', name:'Multiple Procedures',
+   desc:'Appended to the second and subsequent procedures performed during the same operative session by the same provider.',
+   clue:'Multiple distinct procedures in one session. Typically applied to lesser procedures after the primary one.',
+   trap:'Not needed if codes are add-on codes (marked with + in CPT) — add-on codes are exempt from -51. Also, some payers handle this automatically.',
+   example:'During one session, a surgeon performs a cholecystectomy (primary) and also an appendectomy. The appendectomy code gets -51.'},
+  {num:'-52', name:'Reduced Services',
+   desc:'The procedure was partially performed or reduced at the physician\'s discretion — not fully completed as described by the CPT code.',
+   clue:'Documentation shows the procedure was started but not finished, or a lesser version was performed. "Procedure was partially completed" or "limited examination performed."',
+   trap:'Don\'t confuse with -53 (discontinued). -52 = reduced intentionally from the start or partially done. -53 = started and then stopped due to patient risk.',
+   example:'A colonoscopy is performed but the physician only examines to the splenic flexure rather than the full colon due to adequate visualization of the area of concern. Modifier -52 is applied.'},
+  {num:'-53', name:'Discontinued Procedure',
+   desc:'A procedure was started but discontinued due to threat to patient well-being. This goes beyond a simple reduction.',
+   clue:'"Procedure terminated," "discontinued due to patient instability," "anesthesia complications required stopping."',
+   trap:'-52 vs -53: -52 = partial/reduced service. -53 = the intent was to do the full procedure but it had to be stopped for safety. The key difference is WHY it wasn\'t completed.',
+   example:'During a cardiac catheterization, the patient develops severe arrhythmia and the procedure is terminated for patient safety. The procedure code is reported with -53.'},
+  {num:'-57', name:'Decision for Surgery',
+   desc:'An E/M service resulted in the initial decision to perform major surgery (90-day global period).',
+   clue:'The visit note includes language like "surgical intervention recommended," "discussed surgical options," "patient consented to surgery" for a major procedure.',
+   trap:'-25 vs -57: -25 is for an E/M with a minor procedure (0-10 day global). -57 is specifically for the E/M visit where the decision was made for a MAJOR surgery (90-day global).',
+   example:'Patient presents with acute cholecystitis. After evaluation, the surgeon determines the patient needs a cholecystectomy (major, 90-day global). The E/M visit is billed with -57.'},
+  {num:'-59', name:'Distinct Procedural Service',
+   desc:'Used to indicate that a procedure is distinct and independent from other services performed on the same day that would normally be bundled.',
+   clue:'The procedures involve different sites, different encounters, different organs, or are truly separate services despite appearing bundled under NCCI edits.',
+   trap:'CMS prefers -XE/-XS/-XP/-XU (more specific unbundling modifiers) over -59 when possible. -59 is the broadest "unbundling" modifier. Use it only when no X modifier is more specific.',
+   example:'A physician excises a lesion from the patient\'s arm and separately excises a lesion from the trunk. The second excision gets -59 (or -XS for separate structure) to show they are distinct procedures.'},
+  {num:'-76', name:'Repeat Procedure by Same Physician',
+   desc:'The same procedure was repeated by the same physician on the same day — not a duplicate billing error.',
+   clue:'"Procedure repeated," "second [same procedure] performed same day." The documentation must justify why it was medically necessary to do it again.',
+   trap:'-76 = same physician repeats it. -77 = a different physician repeats it. Also, don\'t confuse with -50 (bilateral) which is both sides simultaneously.',
+   example:'A patient undergoes chest X-ray in the morning. After treatment, the physician orders a repeat chest X-ray in the afternoon to assess response. Same physician, same procedure, same day = -76.'},
+  {num:'-77', name:'Repeat Procedure by Another Physician',
+   desc:'Same as -76 concept but performed by a different physician or qualified healthcare professional.',
+   clue:'The documentation shows the same procedure done again the same day, but the note is from a different provider than the original.',
+   trap:'-76 vs -77: Same procedure, same day. -76 = same doc repeated it. -77 = different doc repeated it.',
+   example:'Emergency physician performs and interprets an ECG. Later that day, the cardiologist performs another ECG on the same patient. The cardiologist reports with -77.'},
+  {num:'-modifier XE', name:'Separate Encounter',
+   desc:'A more specific alternative to -59: indicates services are distinct because they occurred during separate encounters on the same day.',
+   clue:'The patient was seen, had a service, left or had a break in care, then returned for another service. Two distinct visits/encounters documented.',
+   trap:'XE = separate Encounter, XS = separate Structure, XP = separate Practitioner, XU = Unusual non-overlapping service. These are all subsets of -59.',
+   example:'Patient is seen in the morning for a wound check and returns in the afternoon for a new complaint of chest pain. The afternoon E/M is appended with -XE.'},
+  {num:'-modifier 24', name:'Unrelated E/M During Postoperative Period',
+   desc:'An E/M service performed during a surgery\'s global period that is unrelated to the original surgery.',
+   clue:'Documentation clearly states the visit is for a problem NOT related to the surgery. "Patient seen for unrelated issue during postoperative period."',
+   trap:'Without -24, the payer assumes any E/M during the global period is follow-up care (already paid). -24 tells the payer: this is for something different.',
+   example:'Patient had knee replacement 3 weeks ago (90-day global). Now presents with a urinary tract infection. The E/M for the UTI visit is coded with -24.'}
+];
+
+// ─── FLIP CARDS ───
+const flipFrontGradients = [
+  'linear-gradient(135deg,#6c5ce7,#a29bfe)',
+  'linear-gradient(135deg,#00b894,#00cec9)',
+  'linear-gradient(135deg,#fd79a8,#e84393)',
+  'linear-gradient(135deg,#fdcb6e,#e17055)',
+  'linear-gradient(135deg,#0984e3,#74b9ff)',
+  'linear-gradient(135deg,#6c5ce7,#fd79a8)',
+  'linear-gradient(135deg,#00b894,#fdcb6e)',
+  'linear-gradient(135deg,#e17055,#fd79a8)',
+  'linear-gradient(135deg,#0984e3,#00cec9)',
+  'linear-gradient(135deg,#a29bfe,#fd79a8)',
+  'linear-gradient(135deg,#55efc4,#00b894)',
+  'linear-gradient(135deg,#fdcb6e,#e84393)',
+];
+const flipBackBorders = [
+  '#6c5ce7','#00b894','#fd79a8','#fdcb6e','#0984e3','#a29bfe',
+  '#e17055','#00cec9','#e84393','#74b9ff','#55efc4','#e84393',
+];
+function buildFlipCards(){
+  const grid = document.getElementById('flipGrid');
+  grid.innerHTML='';
+  modifiers.forEach((m,idx)=>{
+    const card = document.createElement('div');
+    card.className='flip-card';
+    const fg = flipFrontGradients[idx % flipFrontGradients.length];
+    const bb = flipBackBorders[idx % flipBackBorders.length];
+    card.onclick=()=>{sndSwish();card.classList.toggle('flipped');};
+    card.innerHTML=`<div class="flip-inner">
+      <div class="flip-front" style="background:${fg}">${m.num}<small>${m.name}</small></div>
+      <div class="flip-back" style="border-color:${bb}"><strong style="color:${bb}">${m.num} — ${m.name}</strong>${m.desc}<br><br><em style="color:var(--accent2)">📎 Clue:</em> ${m.clue}<br><br><em style="color:var(--accent3)">⚠️ Trap:</em> ${m.trap}</div>
+    </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ─── DRAG MATCH ───
+function buildDragMatch(){
+  const area = document.getElementById('dragMatchArea');
+  area.innerHTML='';
+  const subset = shuffle(modifiers).slice(0,6);
+  const items = shuffle(subset.map(m=>({num:m.num,desc:m.name})));
+  const defs = shuffle(subset.map(m=>({num:m.num,desc:m.name})));
+
+  let html = '<div style="background:linear-gradient(135deg,rgba(108,92,231,.06),rgba(0,206,201,.04));border-radius:12px;padding:16px;margin-bottom:24px;border:1.5px dashed rgba(108,92,231,.2)" id="dragSource"><div style="font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Drag these modifiers ↓</div><div style="display:flex;flex-wrap:wrap;gap:10px">';
+  const dragColors=['linear-gradient(135deg,#6c5ce7,#a29bfe)','linear-gradient(135deg,#00b894,#00cec9)','linear-gradient(135deg,#fd79a8,#e84393)','linear-gradient(135deg,#fdcb6e,#e17055)','linear-gradient(135deg,#0984e3,#74b9ff)','linear-gradient(135deg,#e17055,#fd79a8)'];
+  items.forEach((m,mi)=>{
+    const dc=dragColors[mi%dragColors.length];
+    html+=`<div class="drag-item" draggable="true" data-mod="${m.num}" id="di-${m.num.replace(/[^a-zA-Z0-9]/g,'')}" style="background:${dc};border:none;color:#fff">${m.num}</div>`;
+  });
+  html+='</div></div>';
+  const bucketColors=['#6c5ce7','#00b894','#fd79a8','#fdcb6e','#0984e3','#e17055'];
+  defs.forEach((m,di)=>{
+    const bc=bucketColors[di%bucketColors.length];
+    html+=`<div class="match-row"><div class="drag-area" data-target="${m.num}" id="da-${m.num.replace(/[^a-zA-Z0-9]/g,'')}"></div><div class="bucket-label" style="color:${bc};display:flex;align-items:center;gap:8px"><span style="display:inline-block;width:10px;height:10px;background:${bc};border-radius:50%"></span>${m.desc}</div></div>`;
+  });
+  html+=`<div class="nav-row"><button class="btn btn-accent" onclick="checkDragMatch()">Check Answers</button></div>`;
+  html+=`<div id="dragFeedback"></div>`;
+  area.innerHTML=html;
+
+  // Wire drag events
+  document.querySelectorAll('.drag-item').forEach(el=>{
+    el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',el.dataset.mod);el.style.opacity='.5';});
+    el.addEventListener('dragend',e=>{el.style.opacity='1';});
+  });
+  document.querySelectorAll('.drag-area').forEach(da=>{
+    da.addEventListener('dragover',e=>{e.preventDefault();da.classList.add('over');});
+    da.addEventListener('dragleave',()=>{da.classList.remove('over');});
+    da.addEventListener('drop',e=>{
+      e.preventDefault();da.classList.remove('over');
+      const mod=e.dataTransfer.getData('text/plain');
+      const src=document.getElementById('di-'+mod.replace(/[^a-zA-Z0-9]/g,''));
+      if(src && !src.classList.contains('placed')){
+        // remove any existing item in this zone
+        Array.from(da.children).forEach(ch=>{
+          const orig = document.getElementById('di-'+ch.dataset.mod.replace(/[^a-zA-Z0-9]/g,''));
+          if(orig) orig.classList.remove('placed');
+          ch.remove();
+        });
+        const clone = src.cloneNode(true);
+        clone.setAttribute('draggable','false');
+        clone.style.cursor='pointer';
+        clone.onclick=()=>{clone.remove();src.classList.remove('placed');};
+        da.appendChild(clone);
+        src.classList.add('placed');
+      }
+    });
+  });
+}
+function checkDragMatch(){
+  let correct=0,total=0;
+  document.querySelectorAll('.drag-area').forEach(da=>{
+    total++;
+    const target=da.dataset.target;
+    const child=da.children[0];
+    if(child && child.dataset.mod===target){
+      da.style.borderColor='var(--correct)';da.style.background='rgba(0,184,148,.08)';correct++;
+    } else {
+      da.style.borderColor='var(--wrong)';da.style.background='rgba(225,112,85,.06)';
+    }
+  });
+  const fb=document.getElementById('dragFeedback');
+  if(correct===total){
+    fb.innerHTML='<div class="callout tip"><strong>🎉 Perfect!</strong> All matches correct!</div>';
+    sndCorrect();addScore('cptMatch',6);
+  } else {
+    fb.innerHTML=`<div class="callout warn"><strong>${correct}/${total} correct.</strong> Review the flip cards and try again!</div>`;
+    sndWrong();addScore('cptMatch',correct);
+  }
+}
+
+// ═════════════════════════════════════════════════════════
+//                CPT QUIZ QUESTIONS
+// ═════════════════════════════════════════════════════════
+const cptQuizQs = [
+  {question:'A surgeon performs a scheduled arthroscopic procedure on a patient\'s right knee. During the same operative session, due to intraoperative findings, the surgeon also performs an arthroscopic procedure on the left knee. Which modifier is most appropriate for the second knee?',
+   options:[{text:'-50 — Bilateral Procedure',correct:true},{text:'-59 — Distinct Procedural Service',correct:false},{text:'-51 — Multiple Procedures',correct:false},{text:'-76 — Repeat Procedure, Same Physician',correct:false}],
+   hints:['Think about what word describes performing the same procedure on both sides of the body.','Bilateral means both sides — is there a modifier specifically for that?','The key is: same procedure, both sides, same session = -50.'],
+   rationale:'-50 is correct. The same procedure was performed on both the right and left knee during the same session. -59 is for distinct/unbundled services, -51 is for different procedures, -76 is for repeating the same procedure later the same day.'},
+
+  {question:'During a routine office visit, a physician performs a minor skin biopsy (10-day global period). The physician also documents a detailed evaluation of the patient\'s new-onset hypertension, which required additional history, examination, and medical decision making beyond the biopsy. Which modifier should be appended to the E/M service?',
+   options:[{text:'-25 — Significant, Separately Identifiable E/M',correct:true},{text:'-57 — Decision for Surgery',correct:false},{text:'-59 — Distinct Procedural Service',correct:false},{text:'-24 — Unrelated E/M During Postop Period',correct:false}],
+   hints:['The biopsy is a minor procedure. What modifier separates an E/M from a same-day minor procedure?','Remember: -57 is for the decision for MAJOR surgery (90-day global). This biopsy has a 10-day global.','-25 flags the E/M as significant and separately identifiable from the same-day procedure.'],
+   rationale:'-25 is correct. The E/M for hypertension evaluation is significant and separately identifiable from the minor biopsy. -57 would only apply to a decision for major surgery (90-day global period). -24 is for E/M during an existing postop period for an unrelated reason.'},
+
+  {question:'A provider reviews and interprets a diagnostic ultrasound performed at an independent imaging center. The provider does not own the equipment. Which modifier should the provider append to the ultrasound code?',
+   options:[{text:'-26 — Professional Component',correct:true},{text:'-TC — Technical Component',correct:false},{text:'-52 — Reduced Services',correct:false},{text:'-59 — Distinct Procedural Service',correct:false}],
+   hints:['The provider is only doing the interpretation (reading) part. They don\'t own the equipment.','Professional = the physician\'s brain. Technical = the equipment and technician.','-26 reports only the professional component.'],
+   rationale:'-26 is correct. The provider is performing only the professional component (interpretation). The imaging center would bill -TC for the equipment and technical staff. No modifier is needed when one entity provides both.'},
+
+  {question:'A colonoscopy was scheduled to examine the entire colon. During the procedure, the patient developed hemodynamic instability and the physician was forced to terminate the procedure for patient safety after only reaching the hepatic flexure. Which modifier applies?',
+   options:[{text:'-53 — Discontinued Procedure',correct:true},{text:'-52 — Reduced Services',correct:false},{text:'-22 — Increased Procedural Services',correct:false},{text:'-59 — Distinct Procedural Service',correct:false}],
+   hints:['Was the procedure planned to be partial, or did something go wrong?','Key distinction: -52 is when the service was intentionally reduced. -53 is when it was started and stopped due to threat to well-being.','Patient instability forcing termination = -53, discontinued.'],
+   rationale:'-53 is correct. The full colonoscopy was intended but had to be discontinued due to threat to the patient\'s well-being (hemodynamic instability). -52 would apply if the physician intentionally performed a reduced exam, not if it was terminated emergently.'},
+
+  {question:'A patient who underwent total hip replacement (90-day global) presents 4 weeks post-op with acute bronchitis unrelated to the surgery. The orthopedic surgeon evaluates and treats the bronchitis. Which modifier applies to the E/M code?',
+   options:[{text:'-24 — Unrelated E/M During Postop Period',correct:true},{text:'-25 — Significant, Separately Identifiable E/M',correct:false},{text:'-57 — Decision for Surgery',correct:false},{text:'-79 — Unrelated Procedure During Postop Period',correct:false}],
+   hints:['We\'re in the 90-day postop global period. The bronchitis is unrelated to the hip surgery.','This is an E/M service (not a procedure) during the global period for something unrelated.','-24 flags that an E/M during the global period is for an unrelated condition.'],
+   rationale:'-24 is correct. The E/M visit for bronchitis occurs during the hip replacement\'s 90-day global period but is unrelated to the surgery. Without -24, the payer would deny it as included in the surgical package. -79 would be used for an unrelated PROCEDURE, not an E/M visit.'},
+
+  {question:'A dermatologist excises a lesion from the patient\'s back and, during the same encounter, also excises a separate lesion from the patient\'s forearm. The two excision codes would normally be bundled under NCCI edits. The physician wants to report both. What is the most appropriate modifier for the second excision?',
+   options:[{text:'-XS — Separate Structure',correct:true},{text:'-59 — Distinct Procedural Service',correct:false},{text:'-51 — Multiple Procedures',correct:false},{text:'-76 — Repeat Procedure, Same Physician',correct:false}],
+   hints:['CMS prefers more specific unbundling modifiers over the broad -59 when possible.','The key distinction here is that the lesions are on different anatomical sites/structures.','-XS specifically means "separate structure" — different body sites.'],
+   rationale:'-XS is the best answer. CMS introduced -XE/-XS/-XP/-XU as more specific alternatives to -59. Since the lesions are on separate structures (back vs forearm), -XS is the most precise modifier. While -59 would not be wrong, -XS is preferred when the distinction is anatomical site.'}
+];
+
+// ═════════════════════════════════════════════════════════
+//                CPT SIM CASES
+// ═════════════════════════════════════════════════════════
+const cptSimQs = [
+  {question:'<strong>Case:</strong> A 62-year-old male is admitted for evaluation of worsening heart failure. After comprehensive assessment, the cardiologist determines the patient requires coronary artery bypass grafting (CABG), a major surgical procedure with a 90-day global period. The cardiologist documents the detailed E/M visit that led to the surgical decision. What modifier is appended to the E/M code?',
+   options:[{text:'-57 — Decision for Surgery',correct:true},{text:'-25 — Significant, Separately Identifiable E/M',correct:false},{text:'-24 — Unrelated E/M During Postop Period',correct:false},{text:'-22 — Increased Procedural Services',correct:false}],
+   hints:['This E/M visit resulted in the decision for MAJOR surgery.','CABG has a 90-day global period. What modifier marks the E/M where the surgery decision was made?','-57 is specifically for the E/M visit where the initial decision for major surgery (90-day global) was made.'],
+   rationale:'-57 is correct. The E/M resulted in the initial decision to perform CABG, a major surgery with a 90-day global period. -25 would only apply to E/M with a minor procedure (0-10 day global). -57 is specifically designed for this scenario.'},
+
+  {question:'<strong>Case:</strong> A patient undergoes a morning echocardiogram interpreted by Dr. Smith. Due to equivocal findings on the initial study, Dr. Smith orders a repeat echocardiogram that afternoon and personally interprets it again. How should Dr. Smith report the second echocardiogram?',
+   options:[{text:'Same echo CPT code with -76',correct:true},{text:'Same echo CPT code with -77',correct:false},{text:'Same echo CPT code with -59',correct:false},{text:'Same echo CPT code with -50',correct:false}],
+   hints:['Same procedure, same day, same doctor repeating it.','77 is for a DIFFERENT physician. Since Dr. Smith performed both...','-76 signals that the same physician repeated the same procedure the same day.'],
+   rationale:'-76 is correct. The same physician (Dr. Smith) repeated the same procedure (echocardiogram) on the same day. -77 would be used if a different physician repeated it. -59 is for unbundling distinct services, not for repeat procedures.'},
+
+  {question:'<strong>Case:</strong> A general surgeon schedules a laparoscopic appendectomy. After insufflation and initial exploration, the patient develops severe bradycardia and hypotension. The anesthesiologist and surgeon jointly decide to terminate the procedure before the appendix is removed. The patient is stabilized and transferred to the ICU. How is the appendectomy coded?',
+   options:[{text:'Appendectomy CPT code with -53',correct:true},{text:'Appendectomy CPT code with -52',correct:false},{text:'Appendectomy CPT code with -73',correct:false},{text:'No code reported — procedure not completed',correct:false}],
+   hints:['The procedure was started (anesthesia administered, insufflation done) but had to be stopped. Why was it stopped?','The patient became hemodynamically unstable — a direct threat to well-being. That\'s different from a planned reduction.','-53 is for procedures that were begun but discontinued due to threat to patient safety.'],
+   rationale:'-53 is correct. The procedure was initiated (under anesthesia, insufflation performed) but discontinued due to threat to patient well-being. -52 would apply if the surgeon intentionally reduced the scope. -73 is for discontinued outpatient hospital procedures before anesthesia, which doesn\'t apply here.'},
+
+  {question:'<strong>Case:</strong> A patient is 6 weeks post-op from rotator cuff repair (90-day global). She presents to her orthopedic surgeon\'s office with a new complaint of left ankle pain after a fall yesterday. The surgeon performs an E/M for the ankle injury and orders X-rays. The ankle problem is completely unrelated to the shoulder surgery. How is the E/M for the ankle visit reported?',
+   options:[{text:'E/M code with -24',correct:true},{text:'E/M code with -25',correct:false},{text:'E/M code with -57',correct:false},{text:'E/M code with -79',correct:false}],
+   hints:['We are within the 90-day global period of the shoulder surgery. The ankle visit is unrelated.','This is an E/M service (not a procedure) for an unrelated problem during the postop period.','-24 is for unrelated E/M services performed during the surgical global period.'],
+   rationale:'-24 is correct. The ankle evaluation is an E/M service during the rotator cuff repair\'s 90-day global period for a completely unrelated condition. -79 would be for an unrelated PROCEDURE (not E/M). -25 would apply only to separate E/M on the same day as a minor procedure.'}
+];
+
+// ═════════════════════════════════════════════════════════
+//                E/M CASE QUESTIONS
+// ═════════════════════════════════════════════════════════
+const emCaseQs = [
+  {question:'A 28-year-old healthy female presents for evaluation of a sore throat for 2 days. The physician performs a focused exam, orders a rapid strep test (positive), and prescribes amoxicillin. No other workup is performed. What MDM level does this support?',
+   options:[{text:'Low Complexity',correct:true},{text:'Straightforward',correct:false},{text:'Moderate Complexity',correct:false},{text:'High Complexity',correct:false}],
+   hints:['Count the elements: 1 acute uncomplicated problem, limited data (one test ordered/reviewed), low risk (prescription drug management).','Straightforward would be minimal/no data and self-limited problems with only rest/OTC treatment. This case has a test AND a prescription.','2 of 3 elements at "low" level: acute uncomplicated illness with Rx management + limited data = Low.'],
+   rationale:'Low Complexity. Problems: 1 acute uncomplicated illness (strep pharyngitis). Data: limited (rapid strep ordered and reviewed). Risk: low (prescription drug management — amoxicillin). Two of three elements meet "low," so the MDM level is low.'},
+
+  {question:'A 67-year-old male with diabetes (stable on metformin), hypertension (well-controlled), and hyperlipidemia returns for a routine follow-up. Labs reviewed show stable A1c, lipids at goal. Medications continued unchanged. No new complaints. What MDM level?',
+   options:[{text:'Low Complexity',correct:true},{text:'Straightforward',correct:false},{text:'Moderate Complexity',correct:false},{text:'High Complexity',correct:false}],
+   hints:['Multiple chronic illnesses, but all are stable. How does "stable chronic" map in the MDM table?','Stable chronic conditions map to "low" for the problem element. The data involves reviewing labs (limited). Risk is low (continuing current Rx, no changes).','Low for problems (stable chronic), low for data (review of labs), low for risk (continuation of medication) = Low MDM.'],
+   rationale:'Low Complexity. Problems: multiple stable chronic illnesses (maps to Low). Data: limited — reviewing existing lab results. Risk: low — continuing current medications without change. Stable chronic diseases without exacerbation or new problems keep this at low complexity.'},
+
+  {question:'A 45-year-old female presents with worsening shortness of breath over 2 weeks. She has a history of asthma but is now using her rescue inhaler 4-5 times daily (previously once weekly). The physician orders a chest X-ray, performs spirometry, reviews both results, adjusts her controller medication, and adds an oral corticosteroid taper. What MDM level?',
+   options:[{text:'Moderate Complexity',correct:true},{text:'Low Complexity',correct:false},{text:'Straightforward',correct:false},{text:'High Complexity',correct:false}],
+   hints:['The asthma is a chronic illness with mild exacerbation — it\'s worsening but not life-threatening (yet). Where does that fall in the problem element?','The physician ordered and independently reviewed two diagnostic tests. That\'s moderate data.','Chronic illness with exacerbation (moderate problem) + moderate data (independent interpretation of tests) + moderate risk (Rx management with steroids) = Moderate MDM.'],
+   rationale:'Moderate Complexity. Problems: chronic illness (asthma) with mild exacerbation. Data: moderate — ordering AND independently reviewing chest X-ray and spirometry results. Risk: moderate — prescription drug management including corticosteroids. Two of three at moderate = Moderate MDM.'},
+
+  {question:'A 72-year-old male presents to the emergency department with acute onset chest pain, diaphoresis, and shortness of breath. ECG shows ST-elevation. Troponin levels are markedly elevated. The physician initiates heparin drip, dual antiplatelet therapy, and emergent cardiology consultation for possible cardiac catheterization. What MDM level?',
+   options:[{text:'High Complexity',correct:true},{text:'Moderate Complexity',correct:false},{text:'Low Complexity',correct:false},{text:'Straightforward',correct:false}],
+   hints:['An acute MI with ST-elevation is what kind of threat? Think about the severity.','This is an acute illness threatening life or bodily function. That\'s the highest level of the problem element.','Life-threatening illness + extensive data (ECG, troponin interpretation, external physician consultation) + high risk (drug therapy requiring intensive monitoring, potential surgery with risk factors) = High.'],
+   rationale:'High Complexity. Problems: acute illness posing threat to life (STEMI). Data: extensive — independent interpretation of ECG + labs, plus discussion with external physician (cardiology). Risk: high — drug therapy requiring intensive monitoring (heparin drip), decision regarding emergent surgery with significant risk factors. This is clearly high MDM.'},
+
+  {question:'A 35-year-old female presents with a new headache that has persisted for 3 weeks. No prior history of migraines. Neurological exam is normal. The physician orders an MRI of the brain and refers to neurology for further evaluation. No medications are started. What MDM level?',
+   options:[{text:'Moderate Complexity',correct:true},{text:'Low Complexity',correct:false},{text:'Straightforward',correct:false},{text:'High Complexity',correct:false}],
+   hints:['A new undiagnosed problem with uncertain prognosis — where does that fall on the problems element?','Ordering an MRI and making a referral (discussion with external provider) represents what level of data?','New undiagnosed problem with uncertain prognosis (moderate problem) + moderate data (ordering advanced imaging + external referral) + at least moderate risk (uncertain diagnosis) = Moderate MDM.'],
+   rationale:'Moderate Complexity. Problems: 1 undiagnosed new problem with uncertain prognosis (persistent headache, no clear cause). Data: moderate — ordering advanced imaging (MRI) and initiating referral to external physician (neurology). Risk: moderate — uncertainty in diagnosis. This scenario maps cleanly to moderate MDM.'}
+];
+
+const emSimQs = [
+  {question:'<strong>Case:</strong> A 58-year-old male with Type 2 diabetes (currently well-controlled, A1c 6.8%) and benign prostatic hyperplasia presents for a scheduled follow-up. He mentions occasional mild heartburn. Medications are refilled without changes. The physician reviews a recent PSA result (normal) and A1c. No new tests are ordered. No referrals made. What MDM level does this visit support?',
+   options:[{text:'Low Complexity',correct:true},{text:'Straightforward',correct:false},{text:'Moderate Complexity',correct:false},{text:'High Complexity',correct:false}],
+   hints:['Count the problems: two stable chronic conditions + one self-limited symptom. All stable. What level do stable chronic illnesses support?','Data: reviewing existing results (limited). Risk: continuing current medications (low).','Multiple stable chronic illnesses = low problems. Limited data review. Low risk. This stays at low complexity.'],
+   rationale:'Low Complexity. Despite having multiple conditions, all are stable. Problems: stable chronic illnesses (low). Data: limited — reviewing existing labs only. Risk: low — continuing medications, no changes. The heartburn mentioned is self-limited and not significantly worked up. Two of three at low = Low MDM.'},
+
+  {question:'<strong>Case:</strong> A 42-year-old female presents with 2-day history of right lower quadrant abdominal pain, nausea, and low-grade fever. The physician performs an exam revealing rebound tenderness. A CBC is ordered showing elevated WBC. CT abdomen/pelvis with contrast is ordered and independently interpreted by the physician, revealing findings consistent with acute appendicitis. The physician discusses the case with the on-call surgeon and the patient is scheduled for emergent appendectomy. What MDM level?',
+   options:[{text:'High Complexity',correct:true},{text:'Moderate Complexity',correct:false},{text:'Low Complexity',correct:false},{text:'Straightforward',correct:false}],
+   hints:['Acute appendicitis requiring emergent surgery — what category of problem severity is this?','The physician independently interprets the CT AND discusses with an external surgeon. That\'s extensive data.','Acute illness posing threat to bodily function + extensive data (independent interpretation + external physician discussion) + high risk (decision for emergent surgery) = High MDM.'],
+   rationale:'High Complexity. Problems: acute illness posing threat to bodily function (appendicitis requiring emergent surgery). Data: extensive — independent interpretation of imaging (CT) + lab review + discussion with external physician (surgeon). Risk: high — decision regarding emergent surgery. This clearly meets high complexity.'},
+
+  {question:'<strong>Case:</strong> A 19-year-old college student presents to an urgent care clinic with nasal congestion, mild cough, and sore throat for 3 days. The physician performs a focused exam, diagnoses viral upper respiratory infection, and recommends rest, fluids, and over-the-counter decongestants. No tests are ordered. No prescriptions written. What MDM level?',
+   options:[{text:'Straightforward',correct:true},{text:'Low Complexity',correct:false},{text:'Moderate Complexity',correct:false},{text:'High Complexity',correct:false}],
+   hints:['One self-limited, minor problem. No data ordered. What\'s the risk level with only OTC recommendations?','Minimal risk = rest and OTC meds. That\'s the lowest category.','1 self-limited problem + minimal/no data + minimal risk (OTC only, no Rx) = Straightforward.'],
+   rationale:'Straightforward. Problems: 1 self-limited/minor problem (viral URI). Data: minimal — no tests ordered. Risk: minimal — only OTC recommendations and self-care. All three elements are at the straightforward level. No prescription, no testing, no complexity = Straightforward MDM.'},
+
+  {question:'<strong>Case:</strong> A 70-year-old female with a history of atrial fibrillation (on warfarin) and COPD presents with increased wheezing and productive cough for 5 days. She reports her symptoms are worse than her usual baseline. The physician orders a chest X-ray (showing possible early pneumonia), reviews her INR (slightly elevated at 3.8), orders sputum culture, adjusts her warfarin dose, starts an antibiotic and a short course of oral prednisone, and arranges a follow-up in 3 days. What MDM level?',
+   options:[{text:'Moderate Complexity',correct:true},{text:'High Complexity',correct:false},{text:'Low Complexity',correct:false},{text:'Straightforward',correct:false}],
+   hints:['The COPD is exacerbating (mild-moderate, not life-threatening). The afib is managed but needs warfarin adjustment. How do exacerbating chronic conditions map?','Data includes ordering and reviewing multiple tests, but there\'s no discussion with an external physician here, and no independent interpretation of complex imaging. That\'s moderate data.','Chronic illness with exacerbation + moderate data + moderate risk (multiple Rx drug management including warfarin adjustment and steroids) = Moderate. Not high because no immediate life threat or emergency decision.'],
+   rationale:'Moderate Complexity. Problems: chronic illness with mild exacerbation (COPD worsening). Data: moderate — ordering and reviewing X-ray, labs, and culture. Risk: moderate — prescription drug management of multiple medications including warfarin dose adjustment and corticosteroids. While the elevated INR adds nuance, the overall picture is moderate — no emergent or life-threatening decisions. 2 of 3 at moderate = Moderate MDM.'}
+];
+
+// ─── INIT ALL QUIZZES ───
+function initContent(){
+  buildFlipCards();
+  buildDragMatch();
+
+  // CPT intro quiz
+  buildQuiz('q-cpt1',{
+    question:'A CPT modifier is best described as:',
+    options:[
+      {text:'A 2-digit code appended to a CPT code that provides additional information about how a service was performed without changing the procedure itself',correct:true},
+      {text:'A replacement code used when the original CPT code is incorrect',correct:false},
+      {text:'A standalone billing code for minor office procedures',correct:false},
+      {text:'A numeric indicator required on every claim regardless of circumstances',correct:false}
+    ],
+    hints:['Think about "modifying" — it changes context, not the procedure.','Modifiers add-on to the CPT code; they don\'t replace it.','A modifier adds information (bilateral, reduced, distinct, etc.) to the base CPT code.'],
+    rationale:'A modifier is a 2-digit add-on that provides additional context about how, where, or why a service differed from the standard description — without changing the base CPT code itself.'
+  },'cptIntro');
+
+  // E/M intro quiz
+  buildQuiz('q-em1',{
+    question:'How many MDM elements must be met to qualify for a given complexity level?',
+    options:[
+      {text:'2 of 3 elements',correct:true},
+      {text:'All 3 elements',correct:false},
+      {text:'1 of 3 elements',correct:false},
+      {text:'It varies by payer',correct:false}
+    ],
+    hints:['The 2021 E/M guidelines established a clear rule for this.','It\'s not all 3 — that would be too strict. And 1 of 3 would be too loose.','The rule is 2 of 3: meet at least 2 elements (problems, data, risk) at a given level.'],
+    rationale:'Under the 2021 E/M guidelines, you need to meet 2 of the 3 MDM elements (number/complexity of problems, amount/complexity of data, risk) at a given level to qualify for that level of service.'
+  },'emIntro');
+
+  // CPT quiz section
+  buildMultiQuiz('cptQuizArea', cptQuizQs, 'cptQuiz');
+
+  // CPT sim section
+  buildMultiQuiz('cptSimArea', cptSimQs, 'cptSim');
+
+  // E/M cases
+  buildMultiQuiz('emCaseArea', emCaseQs, 'emCases');
+
+  // E/M sim
+  buildMultiQuiz('emSimArea', emSimQs, 'emSim');
+}
+
+// ─── MDM CALCULATOR ───
+function calcMDM(){
+  const prob = document.querySelector('input[name="mdm-prob"]:checked');
+  const data = document.querySelector('input[name="mdm-data"]:checked');
+  const risk = document.querySelector('input[name="mdm-risk"]:checked');
+  const result = document.getElementById('mdmResult');
+  if(!prob||!data||!risk){result.textContent='Select all three elements';return;}
+  const vals = [+prob.value, +data.value, +risk.value].sort((a,b)=>a-b);
+  // 2 of 3 rule: the second-highest value determines the level
+  const level = vals[1]; // middle value (second of sorted three)
+  const labels=['Straightforward','Low Complexity','Moderate Complexity','High Complexity'];
+  const colors=['#00838f','#2e7d32','#e65100','#c62828'];
+  const badges=['lvl-sf','lvl-low','lvl-mod','lvl-high'];
+  result.innerHTML=`<span class="level-badge ${badges[level]}" style="font-size:1.1rem;padding:6px 20px">${labels[level]}</span>`;
+  result.parentElement.style.borderColor=colors[level];
+}
+
+// ─── SECTION COMPLETE ───
+function completeCPT(){
+  sectionDone.cpt=true;
+  fireConfetti();sndComplete();
+  setTimeout(()=>goTo('sec-em-intro'),1200);
+}
+function completeEM(){
+  sectionDone.em=true;
+  fireConfetti();sndComplete();
+  setTimeout(()=>{goTo('sec-summary');buildSummary();},1200);
+}
+
+// ─── SUMMARY ───
+function buildSummary(){
+  const stats = document.getElementById('summaryStats');
+  const totalPossible = Object.values(sectionMaxes).reduce((a,b)=>a+b,0);
+  const totalEarned = Object.values(sectionScores).reduce((a,b)=>a+b,0);
+  const accuracy = totalPossible>0?Math.round(totalEarned/totalPossible*100):0;
+  const cptTotal = (sectionScores.cptIntro||0)+(sectionScores.cptMatch||0)+(sectionScores.cptQuiz||0)+(sectionScores.cptSim||0);
+  const cptMax = sectionMaxes.cptIntro+sectionMaxes.cptMatch+sectionMaxes.cptQuiz+sectionMaxes.cptSim;
+  const emTotal = (sectionScores.emIntro||0)+(sectionScores.emCases||0)+(sectionScores.emSim||0);
+  const emMax = sectionMaxes.emIntro+sectionMaxes.emCases+sectionMaxes.emSim;
+
+  stats.innerHTML=`
+    <div class="stat-card"><div class="stat-num">${totalEarned}/${totalPossible}</div><div class="stat-label">Total Score</div></div>
+    <div class="stat-card"><div class="stat-num">${accuracy}%</div><div class="stat-label">Accuracy</div></div>
+    <div class="stat-card"><div class="stat-num">${hintsUsed}</div><div class="stat-label">Hints Used</div></div>
+    <div class="stat-card"><div class="stat-num">${sectionDone.cpt&&sectionDone.em?'2/2':sectionDone.cpt||sectionDone.em?'1/2':'0/2'}</div><div class="stat-label">Sections Completed</div></div>
+  `;
+
+  const bd = document.getElementById('summaryBreakdown');
+  bd.innerHTML=`
+    <div style="margin:12px 0"><strong>CPT Modifiers:</strong> ${cptTotal}/${cptMax} (${cptMax>0?Math.round(cptTotal/cptMax*100):0}%)</div>
+    <div style="margin:12px 0"><strong>E/M Complexity:</strong> ${emTotal}/${emMax} (${emMax>0?Math.round(emTotal/emMax*100):0}%)</div>
+    <div class="callout tip" style="margin-top:16px">
+      <strong>Strengths:</strong> ${accuracy>=70?'Solid overall understanding. Keep refining edge cases.':'Focus on reviewing fundamentals — you\'re building a strong foundation.'}<br>
+      <strong>Recommended focus:</strong> ${cptTotal<cptMax*.7?'Spend more time reviewing CPT modifiers, especially similar pairs (-25 vs -57, -52 vs -53, -59 vs -XS). ':''} ${emTotal<emMax*.7?'Practice more E/M MDM cases — focus on distinguishing moderate from high complexity.':'E/M reasoning looks solid!'}
+    </div>
+  `;
+}
+
+function generateSummary(){
+  const totalPossible = Object.values(sectionMaxes).reduce((a,b)=>a+b,0);
+  const totalEarned = Object.values(sectionScores).reduce((a,b)=>a+b,0);
+  const accuracy = totalPossible>0?Math.round(totalEarned/totalPossible*100):0;
+  const confused = document.getElementById('reflectConfused').value||'(not provided)';
+  const next = document.getElementById('reflectNext').value||'(not provided)';
+  const conf = document.getElementById('reflectConf').value||'(not provided)';
+
+  const summary = `═══ MedCode Mastery — Lab Summary ═══
+Date: ${new Date().toLocaleDateString()}
+
+SCORES
+• Total: ${totalEarned}/${totalPossible} (${accuracy}%)
+• CPT Modifiers: ${(sectionScores.cptIntro||0)+(sectionScores.cptMatch||0)+(sectionScores.cptQuiz||0)+(sectionScores.cptSim||0)} / ${sectionMaxes.cptIntro+sectionMaxes.cptMatch+sectionMaxes.cptQuiz+sectionMaxes.cptSim}
+• E/M Complexity: ${(sectionScores.emIntro||0)+(sectionScores.emCases||0)+(sectionScores.emSim||0)} / ${sectionMaxes.emIntro+sectionMaxes.emCases+sectionMaxes.emSim}
+• Hints Used: ${hintsUsed}
+• Sections Completed: ${sectionDone.cpt&&sectionDone.em?'Both':sectionDone.cpt?'CPT Only':sectionDone.em?'E/M Only':'Neither'}
+
+STUDENT REFLECTION
+Still confused about: ${confused}
+Want to work on: ${next}
+Confidence level: ${conf}
+
+RECOMMENDED FOCUS
+${accuracy<70?'Review core concepts in both sections. Revisit flip cards and MDM table.':accuracy<90?'Good foundation — focus on tricky edge cases and similar-sounding modifiers.':'Excellent performance! Ready for practice exams.'}
+═══════════════════════════════════`;
+
+  const el = document.getElementById('generatedSummary');
+  el.textContent=summary;
+  el.classList.remove('hidden');
+  sndComplete();
+}
+
+function copySummary(){
+  const el=document.getElementById('generatedSummary');
+  if(el.classList.contains('hidden')){alert('Generate your summary first!');return;}
+  navigator.clipboard.writeText(el.textContent).then(()=>{
+    const btn=event.target;btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent='📋 Copy Summary',2000);
+  }).catch(()=>{
+    // fallback
+    const range=document.createRange();range.selectNodeContents(el);
+    const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+  });
+}
+
+function resetReflection(){
+  document.getElementById('reflectConfused').value='';
+  document.getElementById('reflectNext').value='';
+  document.getElementById('reflectConf').value='';
+  document.getElementById('generatedSummary').classList.add('hidden');
+}
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', initContent);
+</script>
+</body>
+</html>
